@@ -2,6 +2,7 @@ import sys
 import os
 
 class ConfigTranslation:
+    @staticmethod
     def parse_config(config):
         lines = config.readlines()
         config = {}
@@ -26,6 +27,7 @@ class ConfigTranslation:
                 config[namespace][key] = val
         return config
 
+    @staticmethod
     def encode_config(config):
         out = ""
         
