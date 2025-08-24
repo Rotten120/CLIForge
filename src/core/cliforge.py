@@ -1,5 +1,3 @@
-import os
-import sys
 from utils.arg_parser import ArgParser
 
 class CliForge:
@@ -7,5 +5,10 @@ class CliForge:
         self.__cmds = cmds
         self.config = config
 
-    def exec_cmd(prompt: str = "") -> None:
-        args = ArgParser.split(prompt)
+    def exec_cmd(self, argv: str | list[str]) -> None:
+        argtype = type(argv)
+
+        if argtype == type(""):
+            argv = ArgParser.split(argv)
+
+        print(argv)

@@ -24,8 +24,8 @@ class ArgParser:
     def split(string: str) -> list[str]:
         string = string.strip()
         strlen = len(string)
+
         li = []
-        
         space_idx = -1
         idx = 0
         

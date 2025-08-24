@@ -1,7 +1,4 @@
-import sys
-import os
-
-class ConfigTranslation:
+class ConfigCodec:
     @staticmethod
     def parse_config(config) -> dict[str, str]:
         lines = config.readlines()
