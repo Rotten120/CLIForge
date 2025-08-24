@@ -1,0 +1,9 @@
+[dblog]
+host="localhost"
+user="root"
+pass="RottenFlesh@123"
+db="sim_lib_sys"
+
+[acc]
+id="0"
+
