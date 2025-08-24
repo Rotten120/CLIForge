@@ -1,6 +1,6 @@
 class ArgParser:
     @staticmethod
-    def parse(argv):
+    def parse(argv: list[str]) -> dict[str, str]:
         parsed_args = {}
         params = []
         option = "cmd_arg"
@@ -17,15 +17,15 @@ class ArgParser:
         return parsed_args
 
     @staticmethod
-    def __is_option(arg):
+    def __is_option(arg: str) -> bool:
         return arg[0] == '-'
 
     @staticmethod
-    def split(string):
+    def split(string: str) -> list[str]:
         string = string.strip()
         strlen = len(string)
-        
         li = []
+        
         space_idx = -1
         idx = 0
         
@@ -46,7 +46,7 @@ class ArgParser:
         li.append(string[space_idx + 1:])
         return li
 
-    def __get_argstr(string, quote, idx):
+    def __get_argstr(string: str, quote: chr, idx: int) -> str:
         idx_end = string.find(quote, idx + 1)
         if idx_end == -1:
             raise Exception("String not properly enclosed")

@@ -3,7 +3,7 @@ import os
 
 class ConfigTranslation:
     @staticmethod
-    def parse_config(config):
+    def parse_config(config) -> dict[str, str]:
         lines = config.readlines()
         config = {}
         namespace = ""
@@ -28,7 +28,7 @@ class ConfigTranslation:
         return config
 
     @staticmethod
-    def encode_config(config):
+    def encode_config(config: dict[str, str]):
         out = ""
         
         for namespace in config:
