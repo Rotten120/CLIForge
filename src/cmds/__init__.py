@@ -1,8 +1,6 @@
-from .config import Config
-from .connect import Connect
+from .format import Format
 
 def get_cmd_class():
     return {
-        "config": Config,
-        "connect": Connect
+        "format": Format
     }
