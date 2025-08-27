@@ -12,7 +12,7 @@ class CliForge:
         cmd = argv[0]
         parsed_args = ArgParser.parse(argv[1:])
         
-        self.__cmds[cmd].execarg(parsed_args)
+        self.__cmds[cmd](parsed_args)
 
     @staticmethod
     def format_strcmd(argv: str) -> list[str]:

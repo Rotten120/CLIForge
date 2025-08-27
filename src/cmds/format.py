@@ -1,59 +1,56 @@
 from core.cliforge import CliForge
 
 class Format:
-    CASING = 0
-    ITALIC = False
-    STRONG = False
-    SOURCE = None
-    def execarg(parsed_args: dict[str, str]) -> None:
+    def __init__(self, parsed_args: dict[str, list[str]]):
+        self.flags = {
+            "UPPER": False,
+            "LOWER": False,
+            "ITALIC": False,
+            "STRONG": False,
+            "SOURCE": False
+        }
+        
+        self.flagargs = {}
+        self.execarg(parsed_args)
+        
+    def execarg(self, parsed_args: dict[str, list[str]]) -> None:
         optli = {
-            "--upper": Format.__upper,
-            "--lower": Format.__lower,
-            "-i": Format.__italic,
-            "-b": Format.__strong,
-            "--source": Format.__source
+            "--upper": "UPPER",
+            "--lower": "LOWER",
+            "-i": "ITALIC",
+            "-b": "STRONG",
+            "--source": "SOURCE"
         }
         
         for opt in parsed_args:
             if opt in optli:
-                optli[opt](parsed_args[opt])
+                flag = optli[opt]
+                value = parsed_args[opt]
+                self.set_flag(flag, value)
             elif opt != "cmd_arg":
                 raise Exception("option not exist")
 
-        Format.run(parsed_args["cmd_arg"])        
+        self.run(parsed_args["cmd_arg"])        
 
-    def __upper(args: list[str]) -> None:
-        Format.CASING = 1
+    def set_flag(self, key: str, arg: list[str] = []) -> None:
+        self.flags[key] = True
+        if arg != []:
+            self.flagargs[key] = arg
 
-    def __lower(args: list[str]) -> None:
-        Format.CASING = -1
-
-    def __italic(args: list[str]) -> None:
-        Format.ITALIC = True
-
-    def __strong(args: list[str]) -> None:
-        Format.STRONG = True
-
-    def __source(args: list[str]) -> None:
-        if len(args) == 0:
-            raise Exception("did not provided an string")
-        Format.SOURCE = args[0]
-
-    def run(cmd_args: list[str]) -> None:
+    def run(self, cmd_args: list[str]) -> None:
         string = cmd_args[0]
-        if Format.CASING == 1:
+        flags = self.flags
+
+        if flags["UPPER"]:
             string.upper()
-        elif Format.CASING == -1:
+        if flags["LOWER"]:
             string.lower()
-
-        if Format.ITALIC:
+        if flags["ITALIC"]:
             string = "<i>" + string
-
-        if Format.STRONG:
+        if flags["STRONG"]:
             string = "<b>" + string
-
-        if Format.SOURCE != None:
-            string = Format.SOURCE + ": " + string
+        if flags["SOURCE"]:
+            string = self.flagargs["SOURCE"][0] + ": " + string
 
         print(string)
             
