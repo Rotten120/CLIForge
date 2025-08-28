@@ -1,59 +1,44 @@
-from core.cliforge import CliForge
+from cmds.cmd import Command, FlagBool, FlagList
 
-class Format:
-    def __init__(self, parsed_args: dict[str, list[str]]):
-        self.flags = {
-            "UPPER": False,
-            "LOWER": False,
-            "ITALIC": False,
-            "STRONG": False,
-            "SOURCE": False
-        }
-        
-        self.flagargs = {}
-        self.execarg(parsed_args)
-        
-    def execarg(self, parsed_args: dict[str, list[str]]) -> None:
-        optli = {
-            "--upper": "UPPER",
-            "--lower": "LOWER",
-            "-i": "ITALIC",
-            "-b": "STRONG",
-            "--source": "SOURCE"
-        }
-        
-        for opt in parsed_args:
-            if opt in optli:
-                flag = optli[opt]
-                value = parsed_args[opt]
-                self.set_flag(flag, value)
-            elif opt != "cmd_arg":
-                raise Exception("option not exist")
+class Format(Command):
+    flagbools: dict[str, FlagBool] = {
+        "ITALIC": FlagBool(False),
+        "STRONG": FlagBool(False),
+        "UPPER": FlagBool(False),
+        "LOWER": FlagBool(False)
+    }
 
-        self.run(parsed_args["cmd_arg"])        
+    flaglists: dict[str, FlagList] = {
+        "SOURCE": FlagList(["None"], 1)
+    }
 
-    def set_flag(self, key: str, arg: list[str] = []) -> None:
-        self.flags[key] = True
-        if arg != []:
-            self.flagargs[key] = arg
+    optli: dict[str, str] = {
+        "--upper": "UPPER",
+        "--lower": "LOWER",
+        "-i": "ITALIC",
+        "-b": "STRONG",
+        "--source": "SOURCE"
+    }
 
     def run(self, cmd_args: list[str]) -> None:
         string = cmd_args[0]
-        flags = self.flags
 
-        if flags["UPPER"]:
-            string.upper()
-        if flags["LOWER"]:
-            string.lower()
-        if flags["ITALIC"]:
+        for n in self.flagbools:
+            self.flagbools[n].print()
+
+        if self.flagbools["UPPER"]:
+            string = string.upper()
+        if self.flagbools["LOWER"]:
+            string = string.lower()
+        if self.flagbools["ITALIC"]:
             string = "<i>" + string
-        if flags["STRONG"]:
+        if self.flagbools["STRONG"]:
             string = "<b>" + string
-        if flags["SOURCE"]:
-            string = self.flagargs["SOURCE"][0] + ": " + string
+
+        source_val = self.flaglists["SOURCE"].value[0]
+        if source_val != None:
+            string = source_val + ": " + string
 
         print(string)
-            
-            
 
-        
+    
