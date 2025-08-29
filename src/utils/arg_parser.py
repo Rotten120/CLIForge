@@ -3,7 +3,7 @@ class ArgParser:
     def parse(argv: list[str]) -> dict[str, str]:
         parsed_args = {}
         params = []
-        option = "cmd_arg"
+        option = "--"            
 
         for idx, arg in enumerate(argv):
             if ArgParser.__is_option(arg):
@@ -13,8 +13,17 @@ class ArgParser:
                 option = arg
             else:
                 params.append(arg)
+
         parsed_args[option] = params
         return parsed_args
+
+    @staticmethod
+    def __update_parsed_args(parsed_args: dict[str, str], option: str, params: list[str]) -> None:
+        if option in parsed_args:
+            parsed_args[option] += params
+        else:
+            parsed_args[option] = params
+        params = []
 
     @staticmethod
     def __is_option(arg: str) -> bool:
@@ -24,30 +33,38 @@ class ArgParser:
     def split(string: str) -> list[str]:
         string = string.strip()
         strlen = len(string)
-
-        li = []
-        space_idx = -1
-        idx = 0
         
+        splitstr = []
+        substr = ""
+
+        idx = 0
         while idx < strlen:
             char = string[idx]
-            
-            if char == '"' or char == "'":
-                argstr = ArgParser.__get_argstr(string, char, idx)
-                li.append(argstr[0])
-                idx = argstr[1] + 1
-                space_idx = idx
-            elif char == ' ':
-                if idx - space_idx != 1:
-                    li.append(string[space_idx + 1:idx])
-                space_idx = idx
-                
-            idx += 1
-        li.append(string[space_idx + 1:])
-        return li
 
-    def __get_argstr(string: str, quote: chr, idx: int) -> str:
-        idx_end = string.find(quote, idx + 1)
-        if idx_end == -1:
+            if char in ['"', "'"]:
+                strlit = ArgParser.get_strlit(string, char, idx)
+                substr += strlit
+                idx += len(strlit) + 1
+            elif char != ' ':
+                substr += char
+
+            if char in [' ', '=']:
+                ArgParser.noempty_append(splitstr, substr)
+                substr = ""
+
+            idx += 1
+        splitstr.append(substr)
+        return splitstr
+
+    #ignores empty strings
+    @staticmethod
+    def noempty_append(splitstr, substr):
+        if substr != "":
+            splitstr.append(substr)
+
+    @staticmethod
+    def get_strlit(string: str, quote: chr, idx: int) -> str:
+        strlit_end = string.find(quote, idx + 1)
+        if strlit_end == -1:
             raise Exception("String not properly enclosed")
-        return (string[idx + 1:idx_end], idx_end)
+        return string[idx + 1:strlit_end]
