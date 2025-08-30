@@ -5,29 +5,38 @@ class ArgParser:
         params = []
         option = "--"            
 
-        for idx, arg in enumerate(argv):
+        if ArgParser.__is_option(argv[0]):
+            option = argv[0]
+        else:
+            return {option: argv}
+
+        for idx, arg in enumerate(argv[1:]):
             if ArgParser.__is_option(arg):
-                if idx != 0:
-                    parsed_args[option] = params
-                    params = []
-                option = arg
+                arg = ArgParser.__valid_eq(arg, len(params))
+                parsed_args[option] = params
+                params.clear()
+                option = arg  
             else:
                 params.append(arg)
+
+            if option == "--":
+                params = argv[idx + 1:]
+                break
 
         parsed_args[option] = params
         return parsed_args
 
     @staticmethod
-    def __update_parsed_args(parsed_args: dict[str, str], option: str, params: list[str]) -> None:
-        if option in parsed_args:
-            parsed_args[option] += params
-        else:
-            parsed_args[option] = params
-        params = []
-
-    @staticmethod
     def __is_option(arg: str) -> bool:
         return arg[0] == '-'
+
+    @staticmethod
+    def __valid_eq(arg: str, paramlen: int) -> str:
+        if arg[-1] == '=':
+            arg = arg[:-1]
+            if paramlen != 1:
+                raise ValueError(f"Option expects 1 argument but {paramlen} was given")
+        return arg
 
     @staticmethod
     def split(string: str) -> list[str]:
@@ -56,7 +65,6 @@ class ArgParser:
         splitstr.append(substr)
         return splitstr
 
-    #ignores empty strings
     @staticmethod
     def noempty_append(splitstr, substr):
         if substr != "":
