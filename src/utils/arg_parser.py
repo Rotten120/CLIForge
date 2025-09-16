@@ -10,11 +10,14 @@ class ArgParser:
         else:
             return {option: argv}
 
+        if option == "--":
+            return {option: argv[1:]}
+
         for idx, arg in enumerate(argv[1:]):
             if ArgParser.__is_option(arg):
-                arg = ArgParser.__valid_eq(arg, len(params))
+                option = ArgParser.__valid_eq(option, len(params))
                 parsed_args[option] = params
-                params.clear()
+                params = []
                 option = arg  
             else:
                 params.append(arg)
@@ -23,6 +26,7 @@ class ArgParser:
                 params = argv[idx + 1:]
                 break
 
+        option = ArgParser.__valid_eq(option, len(params))
         parsed_args[option] = params
         return parsed_args
 

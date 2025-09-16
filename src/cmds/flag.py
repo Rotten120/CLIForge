@@ -9,9 +9,8 @@ class Flag:
             if val_arglen != argcount:
                 raise TypeError(f"{flag_name} takes {argcount} positional arguments but {val_arglen} was given")
         else:
-            argcount *= 1
-            if val_arglen < argcount:
-                raise TypeError(f"{flag_name} takes at least {argcount} positional arguments but {val_arglen} was givne")
+            if val_arglen == 0:
+                raise TypeError(f"{flag_name} takes at least 1 positional arguments but 0 was givne")
 
     def update_flag(self, flag_name: str, value: list[str] == []) -> None:
         self.__check_argcnt(flag_name, len(value))
