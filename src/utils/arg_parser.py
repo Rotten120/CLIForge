@@ -1,4 +1,4 @@
-class ArgParser:
+class ArgParser:    
     @staticmethod
     def parse(argv: list[str]) -> dict[str, str]:
         parsed_args = {}
@@ -10,11 +10,14 @@ class ArgParser:
         else:
             return {option: argv}
 
+        if option == "--":
+            return {option: argv[1:]}
+
         for idx, arg in enumerate(argv[1:]):
             if ArgParser.__is_option(arg):
-                arg = ArgParser.__valid_eq(arg, len(params))
+                option = ArgParser.__valid_eq(option, len(params))
                 parsed_args[option] = params
-                params.clear()
+                params = []
                 option = arg  
             else:
                 params.append(arg)
@@ -23,6 +26,7 @@ class ArgParser:
                 params = argv[idx + 1:]
                 break
 
+        option = ArgParser.__valid_eq(option, len(params))
         parsed_args[option] = params
         return parsed_args
 
@@ -39,40 +43,44 @@ class ArgParser:
         return arg
 
     @staticmethod
-    def split(string: str) -> list[str]:
-        string = string.strip()
-        strlen = len(string)
+    def tokenize(string: str) -> list[str]:
+        tokens = []
+        temp_token = ""
+
+        quote_sep = None
+        in_token = False
+        on_equal = False
+
+        def flush():
+            nonlocal temp_token
+            if temp_token:
+                tokens.append(temp_token)
+                temp_token = ""
+                return True
+            return False
         
-        splitstr = []
-        substr = ""
+        for char in string:        
+            if char in ["'", '"']:
+                quote_set = {None: char, char: None}
+                if quote_sep in quote_set:
+                   quote_sep = quote_set[quote_sep]
+                   continue
 
-        idx = 0
-        while idx < strlen:
-            char = string[idx]
+            if char == '=' and not on_equal:
+                if flush():
+                    tokens.append('=')
+                    on_equal = True
+                    continue
 
-            if char in ['"', "'"]:
-                strlit = ArgParser.get_strlit(string, char, idx)
-                substr += strlit
-                idx += len(strlit) + 1
-            elif char != ' ':
-                substr += char
-
-            if char in [' ', '=']:
-                ArgParser.noempty_append(splitstr, substr)
-                substr = ""
-
-            idx += 1
-        splitstr.append(substr)
-        return splitstr
-
-    @staticmethod
-    def noempty_append(splitstr, substr):
-        if substr != "":
-            splitstr.append(substr)
-
-    @staticmethod
-    def get_strlit(string: str, quote: chr, idx: int) -> str:
-        strlit_end = string.find(quote, idx + 1)
-        if strlit_end == -1:
-            raise Exception("String not properly enclosed")
-        return string[idx + 1:strlit_end]
+            in_token = not char.isspace() or (quote_sep != None)
+            if in_token:
+                temp_token += char
+            elif flush():
+                on_equal = False
+                
+        if quote_sep != None:
+            error_msg = f"Unclosed quote ({quote_sep})"
+            raise ValueError(error_msg)
+        flush()
+        return tokens
+    
