@@ -1,46 +1,43 @@
 class ArgParser:    
     @staticmethod
-    def parse(argv: list[str]) -> dict[str, str]:
-        parsed_args = {}
+    def parse(tokens: list[str]) -> dict[str, str]:
+        args = {}
         params = []
-        option = "--"            
+        
+        option = "--"
+        in_equal = False
 
-        if ArgParser.__is_option(argv[0]):
-            option = argv[0]
-        else:
-            return {option: argv}
+        def flush():
+            nonlocal option
+            nonlocal in_equal
+            nonlocal params
+            if in_equal:
+                if len(params) != 1:
+                    raise ValueError(f"Option expects 1 positional argument {len(params)} was given")
+                in_equal = False
+            args[option] = params
+            option = token
+            params = []
 
-        if option == "--":
-            return {option: argv[1:]}
+        for idx, token in enumerate(tokens):
+            if token == '=':
+                if in_equal:
+                   raise TypeError(f"Only one '=' is possible each option")
+                in_equal = True
+                continue
 
-        for idx, arg in enumerate(argv[1:]):
-            if ArgParser.__is_option(arg):
-                option = ArgParser.__valid_eq(option, len(params))
-                parsed_args[option] = params
-                params = []
-                option = arg  
+            # checks if token is an option
+            if token[0] == '-':
+                flush()
             else:
-                params.append(arg)
+                params.append(token)
 
-            if option == "--":
-                params = argv[idx + 1:]
+            if token == "--":
+                params = tokens[idx + 1:]
                 break
 
-        option = ArgParser.__valid_eq(option, len(params))
-        parsed_args[option] = params
-        return parsed_args
-
-    @staticmethod
-    def __is_option(arg: str) -> bool:
-        return arg[0] == '-'
-
-    @staticmethod
-    def __valid_eq(arg: str, paramlen: int) -> str:
-        if arg[-1] == '=':
-            arg = arg[:-1]
-            if paramlen != 1:
-                raise ValueError(f"Option expects 1 argument but {paramlen} was given")
-        return arg
+        flush()
+        return args
 
     @staticmethod
     def tokenize(string: str) -> list[str]:
