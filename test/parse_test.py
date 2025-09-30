@@ -1,24 +1,22 @@
 from script_import import *
 from utils.arg_parser import ArgParser
 
-class Test(unittest.TestCase):
-    def test_case(self):
-        test_cases = [
+class TestEquals(TestCase):
+    def test_equals(self):
+        test_in = [
             ['arg1', 'arg2'],
             ['-a', '=', 'arg1', '-b', 'arg2']
         ]
 
-        test_outputs = [
+        test_out = [
             {'--': ['arg1', 'arg2']},
             {'--': [], '-a': ['arg1'], '-b': ['arg2']}
         ]
         
-        for inp, exp in zip(test_cases, test_outputs):
-            with self.subTest(text=inp):
-                self.assertEqual(ArgParser.parse(inp), exp)
-
+        self._exe_test(test_in, test_out, ArgParser.parse)
+                
     def test_errs(self):
-        error_cases = [
+        err_in = [
             ['-a', '=', '='],
             ['-a', '=', 'arg1', '=', 'arg2'],
             ['-a', '='],
@@ -26,18 +24,28 @@ class Test(unittest.TestCase):
             ['-a', '=', 'arg1', 'arg2']
         ]
 
-        error_outputs = [
-            TypeError,
-            TypeError,
-            ValueError,
-            ValueError,
-            ValueError
+        err_out = [
+            TypeError, TypeError,
+            ValueError, ValueError, ValueError
         ]
 
-        for inp, exp_err in zip(error_cases, error_outputs):
-            with self.subTest(text=inp):
-                with self.assertRaises(exp_err):
-                    ArgParser.parse(inp)
+        self._exe_errs(err_in, err_out, ArgParser.parse)
+
+class TestTwoHyphen(TestCase):
+    def test_two_hyphen(self):
+        test_in = [
+            ['--', '-a', 'arg1', 'arg2'],
+            ['-a', 'arg1', '--', '-b', '-c'],
+            ['-a', '--', 'arg1', '--', 'arg2']
+        ]
+
+        test_out = [
+            {'--': ['-a', 'arg1', 'arg2']},
+            {'--': ['-b', '-c'], '-a': ['arg1']},
+            {'--': ['arg1', '--', 'arg2'], '-a': []}
+        ]
+
+        self._exe_test(test_in, test_out, ArgParser.parse)
 
 if __name__ == "__main__":
     unittest.main()
