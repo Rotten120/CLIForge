@@ -1,82 +1,83 @@
-class ArgParser:
+class ArgParser:    
     @staticmethod
-    def parse(argv: list[str]) -> dict[str, str]:
-        parsed_args = {}
+    def parse(tokens: list[str]) -> dict[str, str]:
+        args = {}
         params = []
-        option = "--"            
+        
+        option = "--"
+        in_equal = False
 
-        if ArgParser.__is_option(argv[0]):
-            option = argv[0]
-        else:
-            return {option: argv}
+        def flush():
+            nonlocal option
+            nonlocal in_equal
+            nonlocal params
+            if in_equal:
+                if len(params) != 1:
+                    raise ValueError(f"Option expects 1 positional argument {len(params)} was given")
+                in_equal = False
+            args[option] = params
+            option = token
+            params = []
 
-        if option == "--":
-            return {option: argv[1:]}
+        for idx, token in enumerate(tokens):
+            if token == '=':
+                if in_equal:
+                   raise TypeError(f"Only one '=' is possible each option")
+                in_equal = True
+                continue
 
-        for idx, arg in enumerate(argv[1:]):
-            if ArgParser.__is_option(arg):
-                option = ArgParser.__valid_eq(option, len(params))
-                parsed_args[option] = params
-                params = []
-                option = arg  
+            # checks if token is an option
+            if token[0] == '-':
+                flush()
             else:
-                params.append(arg)
+                params.append(token)
 
-            if option == "--":
-                params = argv[idx + 1:]
+            if token == "--":
+                params = tokens[idx + 1:]
                 break
 
-        option = ArgParser.__valid_eq(option, len(params))
-        parsed_args[option] = params
-        return parsed_args
+        flush()
+        return args
 
     @staticmethod
-    def __is_option(arg: str) -> bool:
-        return arg[0] == '-'
+    def tokenize(string: str) -> list[str]:
+        tokens = []
+        temp_token = ""
 
-    @staticmethod
-    def __valid_eq(arg: str, paramlen: int) -> str:
-        if arg[-1] == '=':
-            arg = arg[:-1]
-            if paramlen != 1:
-                raise ValueError(f"Option expects 1 argument but {paramlen} was given")
-        return arg
+        quote_sep = None
+        in_token = False
+        on_equal = False
 
-    @staticmethod
-    def split(string: str) -> list[str]:
-        string = string.strip()
-        strlen = len(string)
+        def flush():
+            nonlocal temp_token
+            if temp_token:
+                tokens.append(temp_token)
+                temp_token = ""
+                return True
+            return False
         
-        splitstr = []
-        substr = ""
+        for char in string:        
+            if char in ["'", '"']:
+                quote_set = {None: char, char: None}
+                if quote_sep in quote_set:
+                   quote_sep = quote_set[quote_sep]
+                   continue
 
-        idx = 0
-        while idx < strlen:
-            char = string[idx]
+            if char == '=' and not on_equal:
+                if flush():
+                    tokens.append('=')
+                    on_equal = True
+                    continue
 
-            if char in ['"', "'"]:
-                strlit = ArgParser.get_strlit(string, char, idx)
-                substr += strlit
-                idx += len(strlit) + 1
-            elif char != ' ':
-                substr += char
-
-            if char in [' ', '=']:
-                ArgParser.noempty_append(splitstr, substr)
-                substr = ""
-
-            idx += 1
-        splitstr.append(substr)
-        return splitstr
-
-    @staticmethod
-    def noempty_append(splitstr, substr):
-        if substr != "":
-            splitstr.append(substr)
-
-    @staticmethod
-    def get_strlit(string: str, quote: chr, idx: int) -> str:
-        strlit_end = string.find(quote, idx + 1)
-        if strlit_end == -1:
-            raise Exception("String not properly enclosed")
-        return string[idx + 1:strlit_end]
+            in_token = not char.isspace() or (quote_sep != None)
+            if in_token:
+                temp_token += char
+            elif flush():
+                on_equal = False
+                
+        if quote_sep != None:
+            error_msg = f"Unclosed quote ({quote_sep})"
+            raise ValueError(error_msg)
+        flush()
+        return tokens
+    
