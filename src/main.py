@@ -11,7 +11,7 @@ if __name__ == "__main__":
     config_parsed = fetch_config()
 
     forge = CliForge(config_parsed, cmd_class)
-    forge.exec_cmd("cli format testcase --source Rotten -b -i")
+    forge.exec_cmd("cli format --source rotten -b -- hello_world!")
 
 
     
