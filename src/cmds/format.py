@@ -1,18 +1,19 @@
-from cmds.cmd import Command, FlagBool, FlagList
+from cmds.flag import FlagToggle, FlagValue
+from cmds.cmd import Command
 
 class Format(Command):
-    flagbools: dict[str, FlagBool] = {
-        "ITALIC": FlagBool(False),
-        "STRONG": FlagBool(False),
-        "UPPER": FlagBool(False),
-        "LOWER": FlagBool(False)
+    cli_name = "format"
+    cmd_flag_default = FlagValue(["default"], 1)
+    
+    flag_default: dict[str, FlagToggle | FlagValue] = {
+        "ITALIC": FlagToggle(False),
+        "STRONG": FlagToggle(False),
+        "UPPER": FlagToggle(False),
+        "LOWER": FlagToggle(False),
+        "SOURCE": FlagValue(["None"], -1)
     }
 
-    flaglists: dict[str, FlagList] = {
-        "SOURCE": FlagList(["None"], 1)
-    }
-
-    optli: dict[str, str] = {
+    flag_queue: dict[str, str] = {
         "--upper": "UPPER",
         "--lower": "LOWER",
         "-i": "ITALIC",
@@ -20,24 +21,21 @@ class Format(Command):
         "--source": "SOURCE"
     }
 
-    def run(self, cmd_args: list[str]) -> None:
-        string = cmd_args[0]
+    def execute_command(self) -> None:        
+        string = self.cmd_flag.value[0]
 
-        for n in self.flagbools:
-            self.flagbools[n].print()
-
-        if self.flagbools["UPPER"]:
+        if self.flags["UPPER"]:
             string = string.upper()
-        if self.flagbools["LOWER"]:
+        if self.flags["LOWER"]:
             string = string.lower()
-        if self.flagbools["ITALIC"]:
-            string = "<i>" + string
-        if self.flagbools["STRONG"]:
-            string = "<b>" + string
+        if self.flags["ITALIC"]:
+            string = "<i>" + string + "<i>"
+        if self.flags["STRONG"]:
+            string = "<b>" + string + "<b>"
 
-        source_val = self.flaglists["SOURCE"].value[0]
+        source_val = self.flags["SOURCE"].value
         if source_val != None:
-            string = source_val + ": " + string
+            string = str(source_val) + ": " + string
 
         print(string)
 
