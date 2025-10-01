@@ -1,54 +1,78 @@
 from abc import ABC, abstractmethod
-from cmds.flag import FlagBool, FlagList
+from cmds.flag import FlagToggle, FlagValue
 
 class Command(ABC):
-    flagbools: dict[str, FlagBool] = {
-        """
-        FLAG1: FlagBool(True/False),
-        FLAG2: FlagBool(True/False)
-        """
+    cli_name: str = "cmd"
+    cmd_flag_default: FlagValue | FlagToggle = FlagValue([None], 1)
+    flag_default: dict[str, FlagToggle | FlagValue] = {
+        #FLAGNAME -> FLAGVAL
+    }
+
+    flag_queue: dict[str, str] = {
+        # OPTION -> FLAGNAME
     }
     
-    flaglists: dict[str, FlagList] = {
-        """
-        FLAG3: FlagList([arg1, arg2], 2)
-        """
-    }
-    
-    optli: dict[str, str] = {
-        """
-        INPUT1: FLAG_NAME1,
-        INPUT2: FLAG_NAME1,
-        INPUT3: FLAG_NAME2,
-        INPUT4: FLAG_NAME3
-        """
-        }
+    def __init__(self, args: dict[str, list[str]]):
+        self.args = args
+        self.cmd_flag = self.cmd_flag_default
+        self.flags = self.flag_default
+        self.execarg()
 
-    """
-    NEGATIVE ARGCOUNT MEANS THERE SHOULD BE AT LEAST
-    ABS(X) ARGUMENTS PASSED (i.e. -2 means at least 2 args)
-    """
+    def execarg(self) -> None:
+        executed_queues = []
+        last_opt = list(self.args.keys())[-1]
 
-    def __init__(self, parsed_args: dict[str, list[str]]):
-        self.execarg(parsed_args)
+        for opt in self.args:
+            if opt == "--":
+                continue
+            if not(opt in self.flag_queue):
+                raise Exception(f"Option {opt} does not exist. Try {self.cli_name} help")
+            
+            flag = self.flag_queue[opt]
+            if opt == last_opt:
+                self.extract_cmdargs(opt, flag)
 
-    def execarg(self, parsed_args: dict[str, list[str]]) -> None:
-        for opt in parsed_args:
-            if opt in self.optli:
-                flag = self.optli[opt]
-                value = parsed_args[opt]
-                self.set_flag(flag, value)
-            elif opt != "cmd_arg":
-                raise Exception("option not exist")
+            arg = self.args[opt]
+            self.flags[flag].update_flag(flag, arg)
 
-        self.run(parsed_args["cmd_arg"])
+        self.cmd_flag.update_flag(self.cli_name, self.args['--'])
+        self.execute_command()
 
-    def set_flag(self, flag: str, value: list[str]) -> None:
-        if flag in self.flagbools:
-            self.flagbools[flag].update_flag(flag, value)
-        elif flag in self.flaglists:
-            self.flaglists[flag].update_flag(flag, value)
+    def extract_cmdargs(self, opt: str, flag: str) -> None:
+        cmd_args = self.args['--']
+        flag_args = self.args[opt]
+                
+        cmd_arglen = len(cmd_args)
+        flag_arglen = len(flag_args)
+        
+        flag_argcnt = self.flags[flag].argcnt
+        cmd_argcnt = self.cmd_flag.argcnt
+
+        # transfers last `num` eles of src to dest
+        def update_args(eles_to_transfer: int) -> None:
+            if eles_to_transfer == 0:
+                return
+            nonlocal opt
+            self.args['--'] = cmd_args + flag_args[-eles_to_transfer:]
+            self.args[opt] = flag_args[:-eles_to_transfer]
+
+        # MANY-EXACT
+        if cmd_argcnt == -1 and flag_argcnt >= 0:
+            if cmd_arglen == 0 and flag_arglen > flag_argcnt:
+                update_args(flag_argcnt)
+
+        # EXACT-MANY
+        if cmd_argcnt >= 0 and flag_argcnt == -1:
+            if cmd_arglen == 0 and flag_arglen > cmd_argcnt:
+                update_args(cmd_argcnt)
+
+        # EXACT-EXACT
+        if cmd_argcnt >= 0 and flag_argcnt >= 0:
+            if cmd_arglen == 0 and flag_arglen > flag_argcnt:
+                update_args(flag_arglen - flag_argcnt)
+
+        # MANY-MANY DOES NOT NEED ONE
 
     @abstractmethod
-    def run(self, cmd_args: list[str]) -> None:
+    def execute_command(self) -> None:
         pass
